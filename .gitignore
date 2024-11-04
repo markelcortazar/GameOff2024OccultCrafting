@@ -70,3 +70,7 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+/GameOff-OccultCrafter/Library
+*.log
+/GameOff-OccultCrafter/obj
+/GameOff-OccultCrafter/Temp
