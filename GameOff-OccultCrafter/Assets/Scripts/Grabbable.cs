@@ -16,7 +16,6 @@ public class Grabable : MonoBehaviour
 
     public void Grab(InputAction.CallbackContext context)
     {
-        Debug.Log("Getting grabbed :)");
         if (context.started)
         {
             Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
@@ -49,10 +48,5 @@ public class Grabable : MonoBehaviour
             mousePos.z = 0;
             this.transform.position = mousePos;
         }
-        // TODO: Consider ungrabbed items snapping to integer world positions ?
-        //else
-        //{
-        //    if (transform.position.x != Mathf.Floor(transform.position.x)) transform.position
-        //}
     }
 }
