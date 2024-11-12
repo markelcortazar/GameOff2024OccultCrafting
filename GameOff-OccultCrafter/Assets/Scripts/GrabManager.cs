@@ -1,10 +1,16 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerInput))]
 public class GrabManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public static event EventHandler<OnElementGrabOrDropEventArgs> OnDropElement;
+    public static event EventHandler<OnElementGrabOrDropEventArgs> OnGrabElement;
+    public class OnElementGrabOrDropEventArgs : EventArgs
+    {
+        public Transform element;
+    }
 
     private Transform grabbedElement;
     [SerializeField]
@@ -22,6 +28,7 @@ public class GrabManager : MonoBehaviour
     {
         if (grabbedElement == null) return;
         grabbedElement.GetComponent<Collider2D>().enabled = true;
+        OnDropElement?.Invoke(this, new OnElementGrabOrDropEventArgs {element = grabbedElement});
         grabbedElement = null;
     }
 
@@ -30,7 +37,6 @@ public class GrabManager : MonoBehaviour
         if (grabbedElement == null) return;
         Vector3 newPos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
         newPos.z = grabbedElement.position.z;
-        Debug.Log(newPos);
         grabbedElement.position = newPos;
     }
 
@@ -43,26 +49,11 @@ public class GrabManager : MonoBehaviour
             {
                 grabbedElement = hit.collider.gameObject.transform;
                 grabbedElement.gameObject.GetComponent<Collider2D>().enabled = false;
+                OnGrabElement?.Invoke(this, new OnElementGrabOrDropEventArgs { element = grabbedElement});
             }
 
         }
     }
-
-    //    Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-    //    mousePos.z = 0;
-    //    if (boundsCollider.bounds.Contains(mousePos))
-    //    {
-    //        isGrabbed = true;
-    //        boundsCollider.enabled = false;
-    //    }
-    //}
-    //else if (context.canceled && isGrabbed)
-    //{
-    //    boundsCollider.enabled = true;
-    //    isGrabbed = false;
-
-    //}
-
 
     // Update is called once per frame
     void Update()
