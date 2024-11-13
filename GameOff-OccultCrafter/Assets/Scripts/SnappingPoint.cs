@@ -1,26 +1,30 @@
 using Shapes;
+using Sirenix.OdinInspector;
 using System.Collections;
 using UnityEditor;
 using UnityEngine;
 
 public class SnappingPoint : MonoBehaviour
 {
+    private static float minDistanceFound = float.MaxValue;
+    private static SnappingPoint currentClosest = null;
 
     [SerializeField]
     private float radius = 1f;
     [SerializeField]
     private bool canAdd = true;
-    [SerializeField]
+    [SerializeField, OnValueChanged("ValidateCanRemove")]
     private bool canRemove = true;
     public bool CanRemove { 
         get { return canRemove; } 
-        set 
-        { 
-            canRemove = value; 
-            if (canRemove && heldItem != null) heldItem.GetComponent<Collider2D>().enabled = true;
-            else if (!canRemove && heldItem != null) heldItem.GetComponent<Collider2D>().enabled = false; 
+        set
+        {
+            canRemove = value;
+            ValidateCanRemove();
         }
     }
+    [SerializeField]
+    private bool canBeDisplaced = false;
     private float deviationTolerance;
     private Transform heldItem;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -31,11 +35,19 @@ public class SnappingPoint : MonoBehaviour
         GrabManager.OnGrabElement += CheckForGrabbedElementIsHeld;
     }
 
+    void AddHeldItem(Transform item)
+    {
+        heldItem = item;
+        if (!canRemove) item.GetComponent<Collider2D>().enabled = false;
+        if (!canBeDisplaced) item.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
+        StartCoroutine(SnapElement());
+    }
 
     void RemoveHeldItem() 
     {
         if (!canRemove) return;
         heldItem.GetComponent<Collider2D>().enabled = true;
+        heldItem.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
         heldItem = null;
         TickManager.OnTick -= CheckForHeldElementRemains;
     }
@@ -55,12 +67,25 @@ public class SnappingPoint : MonoBehaviour
     void CheckForDroppedElementRange(object sender, GrabManager.OnElementGrabOrDropEventArgs args)
     {
         if (!canAdd || heldItem != null) return;
-        if ( Vector2.Distance(args.element.transform.position, this.transform.position) <= radius)
+        float distance = Vector2.Distance(args.element.transform.position, this.transform.position);
+        if ( distance <= radius)
         {
-            heldItem = args.element;
-            if(!canRemove) args.element.GetComponent<Collider2D>().enabled = false;
-            StartCoroutine(SnapElement());
+            StartCoroutine(CheckForClosestSnappingPoint(distance, args.element));
         }
+    }
+
+    private IEnumerator CheckForClosestSnappingPoint(float dist, Transform element)
+    {
+        if (dist < minDistanceFound)
+        {
+            minDistanceFound = dist;
+            currentClosest = this;
+        }
+        yield return null;
+        if (this != currentClosest) yield break;
+        AddHeldItem(element);
+        minDistanceFound = float.MaxValue;
+        currentClosest = null;
     }
 
     private IEnumerator SnapElement()
@@ -85,5 +110,11 @@ public class SnappingPoint : MonoBehaviour
         Draw.Color = Color.white;
         Draw.Ring(transform.position, radius, 0.02f);
         Draw.Disc(transform.position, radius/50);
+    }
+
+    private void ValidateCanRemove()
+    {
+        if (canRemove && heldItem != null) heldItem.GetComponent<Collider2D>().enabled = true;
+        else if (!canRemove && heldItem != null) heldItem.GetComponent<Collider2D>().enabled = false;
     }
 }
